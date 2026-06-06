@@ -1,5 +1,5 @@
 /* ============================================================
-   AUGERFAB INDUSTRIAL — main.js
+   AUGERFEED INDUSTRIAL — main.js
    All animations, scroll effects, and interactions
    ============================================================ */
 
@@ -845,5 +845,5 @@ if ('loading' in HTMLImageElement.prototype) {
 
 
 // ─── INIT LOG ────────────────────────────────────────────────
-console.log('%cAugerFab Industrial', 'color:#3b5bdb;font-size:20px;font-weight:900;font-family:Outfit,sans-serif');
+console.log('%cAugerFeed Industrial', 'color:#3b5bdb;font-size:20px;font-weight:900;font-family:Outfit,sans-serif');
 console.log('%cEngineering Precision. Manufacturing Excellence.', 'color:#6b7280;font-size:12px');
