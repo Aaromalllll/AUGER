@@ -5,163 +5,276 @@
 
 'use strict';
 
-// ─── PRELOADER & CANVAS ANIMATION ────────────────────────────
+// ─── PREMIUM CINEMATIC PRELOADER ─────────────────────────────
 (function initPreloader() {
-  const canvas = document.getElementById('preloader-canvas');
-  const ctx    = canvas.getContext('2d');
-  const logo   = document.getElementById('preloader-logo');
-  const bar    = document.getElementById('preloader-bar-fill');
   const preloader = document.getElementById('preloader');
+  const canvas    = document.getElementById('preloader-canvas');
+  if (!canvas || !preloader) return;
+  const ctx = canvas.getContext('2d');
 
-  let W, H, particles = [], animFrame, startTime;
-  const PARTICLE_COUNT = 120;
-  const DURATION_MS    = 3400;
+  // ── DOM refs ────────────────────────────────────────────────
+  const streakEl   = document.getElementById('pl-streak');
+  const edgeGlow   = document.getElementById('pl-edge-glow');
+  const iconEl     = document.getElementById('pl-icon');
+  const letters    = document.querySelectorAll('#pl-logo-text .pl-letter');
+  const shimmerEl  = document.getElementById('pl-shimmer');
+  const taglineEl  = document.getElementById('pl-tagline');
+  const ruleEl     = document.getElementById('pl-rule');
+  const progressEl = document.getElementById('pl-progress');
+  const fillEl     = document.getElementById('pl-fill');
+  const msgEl      = document.getElementById('pl-msg');
+  const pctEl      = document.getElementById('pl-pct');
+  const bgAuger    = document.getElementById('pl-bg-auger');
+  const corners    = document.querySelectorAll('.pl-corner');
+
+  const MESSAGES = [
+    'Engineering Precision...',
+    'Building Industrial Excellence...',
+    'Preparing Your Experience...',
+    'Loading Advanced Machinery Solutions...'
+  ];
+  let msgIdx = 0;
+  let animFrame;
+
+  // ── Canvas setup ─────────────────────────────────────────────
+  let W, H, particles = [];
+  const PARTICLE_COUNT = 85;
 
   function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
   }
 
-  // Metallic particle class
+  // Industrial spark particles
   function Particle() { this.reset(true); }
   Particle.prototype.reset = function(init) {
-    this.x  = Math.random() * W;
-    this.y  = init ? Math.random() * H : H + 10;
-    this.vx = (Math.random() - 0.5) * 0.6;
-    this.vy = -(Math.random() * 1.2 + 0.4);
-    this.size   = Math.random() * 2.5 + 0.5;
-    this.alpha  = 0;
-    this.maxAlpha = Math.random() * 0.5 + 0.1;
-    this.fadeIn  = true;
-    this.color   = Math.random() > 0.5
-      ? `rgba(26,86,219,${this.maxAlpha})`
-      : `rgba(249,115,22,${this.maxAlpha})`;
+    this.x        = Math.random() * W;
+    this.y        = init ? Math.random() * H : H + 10;
+    this.vx       = (Math.random() - 0.5) * 0.55;
+    this.vy       = -(Math.random() * 1.1 + 0.25);
+    this.size     = Math.random() * 1.6 + 0.2;
+    this.alpha    = 0;
+    this.maxAlpha = Math.random() * 0.65 + 0.08;
+    this.fadeIn   = true;
+    const r = Math.random();
+    if      (r < 0.5)  this.hue = 'rgba(255,88,0,';
+    else if (r < 0.75) this.hue = 'rgba(255,155,50,';
+    else               this.hue = 'rgba(255,215,130,';
   };
   Particle.prototype.update = function() {
     this.x += this.vx;
     this.y += this.vy;
     if (this.fadeIn) {
-      this.alpha = Math.min(this.alpha + 0.015, this.maxAlpha);
+      this.alpha = Math.min(this.alpha + 0.018, this.maxAlpha);
       if (this.alpha >= this.maxAlpha) this.fadeIn = false;
     } else {
-      this.alpha = Math.max(this.alpha - 0.008, 0);
+      this.alpha = Math.max(this.alpha - 0.007, 0);
     }
     if (this.y < -10 || this.alpha <= 0) this.reset(false);
   };
   Particle.prototype.draw = function() {
     ctx.save();
     ctx.globalAlpha = this.alpha;
-    ctx.fillStyle   = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur  = 6;
+    const col = this.hue + this.alpha + ')';
+    ctx.fillStyle   = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 7;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   };
 
-  // Blueprint grid lines that animate in
-  let gridAlpha = 0;
-  function drawGrid(alpha) {
-    if (alpha <= 0) return;
+  // Blueprint grid
+  function drawGrid() {
     ctx.save();
-    ctx.globalAlpha = alpha * 0.12;
-    ctx.strokeStyle = '#1a56db';
+    ctx.globalAlpha = 0.032;
+    ctx.strokeStyle = '#ff6400';
     ctx.lineWidth   = 0.5;
-    const spacing   = 60;
-    for (let x = 0; x < W; x += spacing) {
+    const sp = 56;
+    for (let x = 0; x < W; x += sp) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
     }
-    for (let y = 0; y < H; y += spacing) {
+    for (let y = 0; y < H; y += sp) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
     ctx.restore();
   }
 
-  // Auger screw SVG path drawn on canvas
-  let augerProgress = 0;
-  function drawAuger(t) {
-    if (t < 0.3 || t > 0.75) return;
-    const prog = Math.min((t - 0.3) / 0.35, 1);
-    const cx   = W / 2, cy = H / 2;
-    const len  = 180 * prog;
-    const turns = 4;
-    ctx.save();
-    ctx.globalAlpha = prog * (t > 0.65 ? 1 - (t - 0.65) / 0.1 : 1);
-    ctx.strokeStyle = '#3b7df8';
-    ctx.lineWidth   = 2.5;
-    ctx.shadowColor = '#1a56db';
-    ctx.shadowBlur  = 12;
-    // Helix spine
-    ctx.beginPath();
-    ctx.moveTo(cx - len, cy);
-    ctx.lineTo(cx + len, cy);
-    ctx.stroke();
-    // Helix flights
-    ctx.strokeStyle = '#f97316';
-    ctx.lineWidth   = 1.5;
-    for (let i = 0; i <= turns * 2 * prog; i += 0.05) {
-      const x = cx - len + (i / (turns * 2)) * len * 2;
-      const y = cy + Math.sin(i * Math.PI) * 28;
-      if (i < 0.05) ctx.beginPath(), ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.restore();
+  // Central orange ambient glow
+  function drawAmbient() {
+    const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.min(W, H) * 0.48);
+    g.addColorStop(0, 'rgba(255,65,0,0.042)');
+    g.addColorStop(0.6, 'rgba(255,35,0,0.016)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
   }
 
-  function animate(ts) {
-    if (!startTime) startTime = ts;
-    const elapsed = ts - startTime;
-    const t       = Math.min(elapsed / DURATION_MS, 1);
-
-    // Update progress bar
-    bar.style.width = (t * 100) + '%';
-
+  function canvasLoop() {
     ctx.clearRect(0, 0, W, H);
-
-    // Background
-    ctx.fillStyle = '#0a0c10';
+    // Rich near-black gradient background
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#070707');
+    bg.addColorStop(1, '#030303');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
+    drawAmbient();
+    drawGrid();
+    particles.forEach(p => { p.update(); p.draw(); });
+    animFrame = requestAnimationFrame(canvasLoop);
+  }
 
-    // Grid fades in at t=0.5
-    gridAlpha = t > 0.5 ? Math.min((t - 0.5) / 0.3, 1) : 0;
-    drawGrid(gridAlpha);
-
-    // Particles (start at t=0.05)
-    if (t > 0.05) {
-      particles.forEach(p => { p.update(); p.draw(); });
-    }
-
-    // Auger screw
-    drawAuger(t);
-
-    // Logo visibility
-    if (t > 0.55 && !logo.classList.contains('visible')) {
-      logo.classList.add('visible');
-    }
-
-    if (t < 1) {
-      animFrame = requestAnimationFrame(animate);
+  // ── Helpers ──────────────────────────────────────────────────
+  function swapMessage() {
+    if (!msgEl) return;
+    const gs = window.gsap;
+    if (gs) {
+      gs.to(msgEl, {
+        opacity: 0, y: -5, duration: 0.22,
+        onComplete() {
+          msgIdx = (msgIdx + 1) % MESSAGES.length;
+          msgEl.textContent = MESSAGES[msgIdx];
+          gs.to(msgEl, { opacity: 1, y: 0, duration: 0.22 });
+        }
+      });
     } else {
-      // Done — hide preloader
-      setTimeout(finishPreloader, 400);
+      msgIdx = (msgIdx + 1) % MESSAGES.length;
+      msgEl.textContent = MESSAGES[msgIdx];
     }
   }
 
   function finishPreloader() {
     cancelAnimationFrame(animFrame);
-    preloader.classList.add('hidden');
-    document.body.classList.remove('no-scroll');
-    // Trigger hero animations
-    triggerHeroReveal();
+    const gs = window.gsap;
+    if (gs) {
+      gs.to(preloader, {
+        opacity: 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+        onComplete() {
+          preloader.classList.add('hidden');
+          document.body.classList.remove('no-scroll');
+          triggerHeroReveal();
+        }
+      });
+    } else {
+      preloader.classList.add('hidden');
+      document.body.classList.remove('no-scroll');
+      triggerHeroReveal();
+    }
   }
 
-  // Init
+  // ── Init canvas ───────────────────────────────────────────────
   resize();
   window.addEventListener('resize', resize);
   for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
-  animFrame = requestAnimationFrame(animate);
+  canvasLoop();
+
+  // ── GSAP animation sequence ───────────────────────────────────
+  // If GSAP hasn't loaded yet (defer), wait for it
+  function runTimeline() {
+    const gs = window.gsap;
+    if (!gs) { setTimeout(finishPreloader, 3200); return; }
+
+    // Set initial hidden states
+    gs.set([iconEl, taglineEl, ruleEl, progressEl], { opacity: 0 });
+    gs.set(letters,   { opacity: 0, y: 22, filter: 'blur(12px)' });
+    gs.set(shimmerEl, { opacity: 0, xPercent: -100 });
+    gs.set(edgeGlow,  { opacity: 0 });
+    gs.set(corners,   { opacity: 0, scale: 0.6 });
+    gs.set(bgAuger,   { opacity: 0, rotation: 0 });
+    gs.set(ruleEl,    { scaleX: 0, opacity: 0 });
+    gs.set(progressEl,{ opacity: 0, y: 8 });
+
+    const tl = gs.timeline({ onComplete: () => setTimeout(finishPreloader, 280) });
+
+    // t=0.06  Light streak sweeps left → right
+    tl.fromTo(streakEl,
+      { xPercent: -130, opacity: 1 },
+      { xPercent: 160,  opacity: 0, duration: 0.85, ease: 'power2.inOut' },
+      0.06
+    );
+
+    // t=0.15  Edge glow materialises
+    tl.to(edgeGlow, { opacity: 1, duration: 1.1, ease: 'power2.out' }, 0.15);
+
+    // t=0.22  Corner brackets snap in (staggered)
+    tl.to(corners, {
+      opacity: 1, scale: 1, duration: 0.45, stagger: 0.07,
+      ease: 'back.out(1.6)'
+    }, 0.22);
+
+    // t=0.38  Background auger wireframe fades + starts perpetual rotation
+    tl.to(bgAuger, { opacity: 0.06, duration: 1.6, ease: 'power2.out' }, 0.38);
+    gs.to(bgAuger,  { rotation: 360, duration: 38, repeat: -1, ease: 'none' });
+
+    // t=0.55  Auger icon blooms in
+    tl.fromTo(iconEl,
+      { opacity: 0, scale: 0.75 },
+      { opacity: 1, scale: 1,  duration: 0.58, ease: 'back.out(1.4)' },
+      0.55
+    );
+
+    // t=0.95  Letters reveal one-by-one (blur → sharp)
+    tl.to(letters, {
+      opacity: 1, y: 0, filter: 'blur(0px)',
+      duration: 0.52, stagger: 0.062, ease: 'power3.out'
+    }, 0.95);
+
+    // t=1.70  Metallic shimmer sweeps across logo
+    tl.to(shimmerEl, {
+      opacity: 1, xPercent: 220, duration: 0.72, ease: 'power2.inOut'
+    }, 1.70);
+
+    // t=1.85  Tagline fades up
+    tl.fromTo(taglineEl,
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.48, ease: 'power2.out' },
+      1.85
+    );
+
+    // t=2.0   Orange divider rule expands from centre
+    tl.to(ruleEl, {
+      scaleX: 1, opacity: 1, duration: 0.65, ease: 'power2.out'
+    }, 2.0);
+
+    // t=2.15  Progress section slides up + fades in
+    tl.to(progressEl, {
+      opacity: 1, y: 0, duration: 0.42, ease: 'power2.out'
+    }, 2.15);
+
+    // t=2.15  Progress fill animates 0→100% over 1.75s
+    const prog = { v: 0 };
+    let lastSwap = 0;
+    tl.to(prog, {
+      v: 100, duration: 1.75, ease: 'power1.inOut',
+      onUpdate() {
+        const p = Math.round(prog.v);
+        if (fillEl) fillEl.style.width = p + '%';
+        if (pctEl)  pctEl.textContent  = p + '%';
+        if (p >= 30 && lastSwap === 0) { lastSwap = 1; swapMessage(); }
+        if (p >= 62 && lastSwap === 1) { lastSwap = 2; swapMessage(); }
+        if (p >= 88 && lastSwap === 2) { lastSwap = 3; swapMessage(); }
+      }
+    }, 2.15);
+
+    // t=3.9   Subtle scale nudge before exit
+    tl.to('#pl-center', { scale: 1.012, duration: 0.22, ease: 'power2.out' }, 3.90);
+    tl.to('#pl-center', { scale: 1,     duration: 0.14 },                     4.12);
+
+    // Total ~4.3s
+    tl.to({}, { duration: 0.05 }, 4.26);
+  }
+
+  // GSAP is deferred — wait for DOMContentLoaded then check
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runTimeline);
+  } else {
+    // Give deferred script a tick to execute
+    requestAnimationFrame(() => requestAnimationFrame(runTimeline));
+  }
+
 })();
 
 
@@ -732,5 +845,5 @@ if ('loading' in HTMLImageElement.prototype) {
 
 
 // ─── INIT LOG ────────────────────────────────────────────────
-console.log('%cAugerFab Industrial', 'color:#f97316;font-size:20px;font-weight:900;font-family:Outfit,sans-serif');
-console.log('%cEngineering Precision. Manufacturing Excellence.', 'color:#3b7df8;font-size:12px');
+console.log('%cAugerFab Industrial', 'color:#3b5bdb;font-size:20px;font-weight:900;font-family:Outfit,sans-serif');
+console.log('%cEngineering Precision. Manufacturing Excellence.', 'color:#6b7280;font-size:12px');
