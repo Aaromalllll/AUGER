@@ -441,36 +441,7 @@ function triggerHeroReveal() {
 })();
 
 
-// ─── PRODUCT TABS ─────────────────────────────────────────────
-(function initTabs() {
-  const tabBtns     = document.querySelectorAll('.tab-btn');
-  const tabContents = document.querySelectorAll('.tab-content');
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.tab;
-
-      tabBtns.forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      tabContents.forEach(c => c.classList.remove('active'));
-
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-
-      const content = document.getElementById('tab-content-' + target);
-      if (content) {
-        content.classList.add('active');
-        // Re-trigger reveal for cards in this tab
-        content.querySelectorAll('.reveal').forEach((el, i) => {
-          el.classList.remove('revealed');
-          setTimeout(() => el.classList.add('revealed'), i * 80);
-        });
-      }
-    });
-  });
-})();
 
 
 // ─── TESTIMONIAL CAROUSEL ────────────────────────────────────
@@ -846,4 +817,511 @@ if ('loading' in HTMLImageElement.prototype) {
 
 // ─── INIT LOG ────────────────────────────────────────────────
 console.log('%cAugerFeed Industrial', 'color:#3b5bdb;font-size:20px;font-weight:900;font-family:Outfit,sans-serif');
-console.log('%cEngineering Precision. Manufacturing Excellence.', 'color:#6b7280;font-size:12px');
+console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;font-size:12px');
+
+
+// ═══════════════════════════════════════════════════════════
+//  AUGER FABRICATION PRODUCT CATALOG ENGINE
+// ═══════════════════════════════════════════════════════════
+(function initCatalog() {
+  if (typeof AUGER_CATALOG === 'undefined') return;
+
+  // ─── State ──────────────────────────────────────────────
+  let activeCategoryId = 'vertical-augers';
+  let activeSubcatId   = null;
+  let searchQuery      = '';
+  let currentProductId = null;
+  let quoteProductName = '';
+
+  // ─── DOM refs ────────────────────────────────────────────
+  const catNav       = document.getElementById('catalog-category-nav');
+  const subcatStrip  = document.getElementById('catalog-subcat-strip');
+  const grid         = document.getElementById('catalog-grid');
+  const resultsInfo  = document.getElementById('catalog-results-info');
+  const overviewEl   = document.getElementById('category-overview');
+  const ovIcon       = document.getElementById('cat-overview-icon');
+  const ovTitle      = document.getElementById('cat-overview-title');
+  const ovDesc       = document.getElementById('cat-overview-desc');
+  const searchInput  = document.getElementById('catalog-search-input');
+  const searchClear  = document.getElementById('catalog-search-clear');
+  const megaGrid     = document.getElementById('mega-menu-grid');
+  const megaViewAll  = document.getElementById('mega-view-all');
+  const prodModalOverlay = document.getElementById('product-modal-overlay');
+  const prodModalClose   = document.getElementById('product-modal-close');
+  const prodModalImg     = document.getElementById('product-modal-img');
+  const prodModalTag     = document.getElementById('product-modal-tag');
+  const prodModalBread   = document.getElementById('product-modal-breadcrumb');
+  const prodModalTitle   = document.getElementById('product-modal-title-text');
+  const prodModalBody    = document.getElementById('product-modal-body');
+  const quoteModalOverlay = document.getElementById('quote-modal-overlay');
+  const quoteModalClose   = document.getElementById('quote-modal-close');
+  const quoteModalEyebrow = document.getElementById('quote-modal-eyebrow');
+  const quoteModalTitle   = document.getElementById('quote-modal-title');
+  const quoteModalProduct = document.getElementById('quote-modal-product-name');
+  const quoteForm         = document.getElementById('quote-form');
+
+  if (!catNav || !grid) return;
+
+  // ─── Helper: get category by id ──────────────────────────
+  function getCat(id) {
+    return AUGER_CATALOG.categories.find(c => c.id === id);
+  }
+
+  // ─── Render category navigation ──────────────────────────
+  function renderCategoryNav() {
+    catNav.innerHTML = AUGER_CATALOG.categories.map(cat => `
+      <button class="cat-nav-btn${cat.id === activeCategoryId ? ' active' : ''}"
+              data-cat-id="${cat.id}"
+              role="tab"
+              aria-selected="${cat.id === activeCategoryId}"
+              aria-label="${cat.name}">
+        ${cat.icon}
+        ${cat.name}
+      </button>
+    `).join('');
+
+    catNav.querySelectorAll('.cat-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCategoryId = btn.dataset.catId;
+        activeSubcatId   = null;
+        searchQuery      = '';
+        if (searchInput) { searchInput.value = ''; searchClear.classList.remove('visible'); }
+        renderAll();
+        // Scroll into view if needed
+        document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  // ─── Render subcategory strip ─────────────────────────────
+  function renderSubcatStrip() {
+    const cat = getCat(activeCategoryId);
+    if (!cat || !cat.subcategories || cat.subcategories.length === 0) {
+      subcatStrip.classList.add('hidden');
+      return;
+    }
+    subcatStrip.classList.remove('hidden');
+    subcatStrip.innerHTML = `
+      <button class="subcat-btn${!activeSubcatId ? ' active' : ''}" data-subcat-id="">All</button>
+      ${cat.subcategories.map(sub => `
+        <button class="subcat-btn${activeSubcatId === sub.id ? ' active' : ''}" data-subcat-id="${sub.id}">${sub.name}</button>
+      `).join('')}
+    `;
+    subcatStrip.querySelectorAll('.subcat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSubcatId = btn.dataset.subcatId || null;
+        renderGrid();
+        renderSubcatStrip();
+        renderCategoryOverview();
+      });
+    });
+  }
+
+  // ─── Render category overview banner ─────────────────────
+  function renderCategoryOverview() {
+    const cat = getCat(activeCategoryId);
+    if (!cat) return;
+    ovIcon.innerHTML  = cat.icon;
+    ovTitle.textContent = cat.name;
+    ovDesc.textContent  = cat.description;
+  }
+
+  // ─── Get filtered products ────────────────────────────────
+  function getFilteredProducts() {
+    let products = AUGER_CATALOG.products;
+
+    if (searchQuery) {
+      return searchProducts(searchQuery);
+    }
+
+    products = products.filter(p => p.category === activeCategoryId);
+
+    if (activeSubcatId) {
+      products = products.filter(p => p.subcategory === activeSubcatId);
+    }
+
+    return products;
+  }
+
+  // ─── Render product grid ──────────────────────────────────
+  function renderGrid() {
+    const products = getFilteredProducts();
+    grid.classList.add('loading');
+
+    setTimeout(() => {
+      grid.classList.remove('loading');
+
+      if (!resultsInfo) return;
+
+      if (searchQuery) {
+        resultsInfo.innerHTML = products.length > 0
+          ? `<strong>${products.length}</strong> result${products.length !== 1 ? 's' : ''} for "<strong>${searchQuery}</strong>"`
+          : '';
+      } else {
+        resultsInfo.innerHTML = `Showing <strong>${products.length}</strong> product${products.length !== 1 ? 's' : ''}`;
+      }
+
+      if (products.length === 0) {
+        grid.innerHTML = `
+          <div class="catalog-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <p>No products found</p>
+            <span>Try adjusting your search or selecting a different category.</span>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = products.map(p => {
+        const cat = getCat(p.category);
+        const catName = cat ? cat.name : p.category;
+        return `
+          <article class="catalog-card reveal" role="listitem" data-product-id="${p.id}">
+            <div class="catalog-card-img-wrap">
+              <img class="catalog-card-img" src="${p.image}" alt="${p.name}" loading="lazy" />
+              <div class="catalog-card-img-overlay"></div>
+              ${p.tag ? `<span class="catalog-card-tag">${p.tag}</span>` : ''}
+              <div class="catalog-card-view">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+            </div>
+            <div class="catalog-card-body">
+              <div class="catalog-card-category">${catName}</div>
+              <h3 class="catalog-card-title">${p.name}</h3>
+              <p class="catalog-card-desc">${p.shortDesc}</p>
+              <div class="catalog-card-ctas">
+                <button class="cta-btn cta-btn-primary" data-action="quote" data-product-id="${p.id}" data-product-name="${p.name}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Request Quote
+                </button>
+                <button class="cta-btn cta-btn-secondary" data-action="detail" data-product-id="${p.id}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  View Details
+                </button>
+                <button class="cta-btn cta-btn-tertiary" data-action="consult" data-product-id="${p.id}" data-product-name="${p.name}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Consultation
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Attach card click and button handlers
+      grid.querySelectorAll('.catalog-card').forEach(card => {
+        // Whole card click → detail
+        card.addEventListener('click', e => {
+          if (e.target.closest('.cta-btn')) return;
+          openProductModal(card.dataset.productId);
+        });
+      });
+
+      grid.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const { action, productId, productName } = btn.dataset;
+          if (action === 'detail') {
+            openProductModal(productId);
+          } else if (action === 'quote' || action === 'consult' || action === 'drawings' || action === 'sales') {
+            openQuoteModal(productName || productId, action);
+          }
+        });
+      });
+
+      // Trigger reveal for newly rendered cards
+      grid.querySelectorAll('.catalog-card.reveal').forEach((el, i) => {
+        setTimeout(() => el.classList.add('revealed'), i * 50);
+      });
+
+    }, 80);
+  }
+
+  // ─── Render mega-menu ─────────────────────────────────────
+  function renderMegaMenu() {
+    if (!megaGrid) return;
+    megaGrid.innerHTML = AUGER_CATALOG.categories.map(cat => `
+      <div class="mega-menu-item" data-cat-id="${cat.id}" tabindex="0" role="button" aria-label="${cat.name}">
+        <div class="mega-menu-item-icon">${cat.icon}</div>
+        <span class="mega-menu-item-name">${cat.name}</span>
+      </div>
+    `).join('');
+
+    megaGrid.querySelectorAll('.mega-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        activeCategoryId = item.dataset.catId;
+        activeSubcatId   = null;
+        searchQuery      = '';
+        if (searchInput) { searchInput.value = ''; searchClear.classList.remove('visible'); }
+        renderAll();
+        document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    if (megaViewAll) {
+      megaViewAll.addEventListener('click', () => {
+        document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }
+
+  // ─── Product Detail Modal ─────────────────────────────────
+  function openProductModal(productId) {
+    const p = getProductById(productId);
+    if (!p) return;
+    currentProductId = productId;
+
+    const cat = getCat(p.category);
+    const catName = cat ? cat.name : p.category;
+
+    // Hero
+    prodModalImg.src     = p.image;
+    prodModalImg.alt     = p.name;
+    prodModalTag.textContent   = p.tag || '';
+    prodModalBread.innerHTML   = `${catName} ${p.subcategory ? ' <span>›</span> ' + (p.subcategory) : ''}`;
+    prodModalTitle.textContent = p.name;
+
+    // Body
+    const featuresHTML = p.features ? `
+      <div class="product-modal-section">
+        <div class="product-modal-section-title">Key Features</div>
+        <ul class="product-modal-features">
+          ${p.features.map(f => `<li>${f}</li>`).join('')}
+        </ul>
+      </div>
+    ` : '';
+
+    const appsHTML = p.applications ? `
+      <div class="product-modal-section">
+        <div class="product-modal-section-title">Applications</div>
+        <ul class="product-modal-applications">
+          ${p.applications.map(a => `<li>${a}</li>`).join('')}
+        </ul>
+      </div>
+    ` : '';
+
+    const specsHTML = p.specifications ? `
+      <div class="product-modal-section">
+        <div class="product-modal-section-title">Specifications</div>
+        <table class="product-modal-specs-table">
+          ${Object.entries(p.specifications).map(([k, v]) =>
+            `<tr><td>${k}</td><td>${v}</td></tr>`
+          ).join('')}
+        </table>
+      </div>
+    ` : '';
+
+    // Related products
+    const related = getRelatedProducts(p, 3);
+    const relatedHTML = related.length > 0 ? `
+      <div class="product-modal-related">
+        <div class="product-modal-section-title">Related Products</div>
+        <div class="product-modal-related-grid">
+          ${related.map(r => {
+            const rc = getCat(r.category);
+            return `
+              <div class="related-card" data-product-id="${r.id}" tabindex="0" role="button">
+                <div class="related-card-title">${r.name}</div>
+                <div class="related-card-cat">${rc ? rc.name : ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    prodModalBody.innerHTML = `
+      <p class="product-modal-desc">${p.description}</p>
+      ${featuresHTML}
+      ${appsHTML}
+      ${specsHTML}
+      <div class="product-modal-ctas">
+        <button class="modal-cta-btn modal-cta-primary" data-action="quote" data-product-name="${p.name}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Request Quote
+        </button>
+        <button class="modal-cta-btn modal-cta-outline" data-action="sales" data-product-name="${p.name}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Contact Sales
+        </button>
+        <button class="modal-cta-btn modal-cta-outline" data-action="drawings" data-product-name="${p.name}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Submit Drawings
+        </button>
+        <button class="modal-cta-btn modal-cta-outline" data-action="consult" data-product-name="${p.name}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Request Consultation
+        </button>
+      </div>
+      ${relatedHTML}
+    `;
+
+    // Attach CTA handlers in modal body
+    prodModalBody.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openQuoteModal(btn.dataset.productName, btn.dataset.action);
+      });
+    });
+
+    // Related card click
+    if (prodModalBody) {
+      prodModalBody.querySelectorAll('.related-card').forEach(card => {
+        card.addEventListener('click', () => openProductModal(card.dataset.productId));
+      });
+    }
+
+    prodModalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProductModal() {
+    prodModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (prodModalClose) prodModalClose.addEventListener('click', closeProductModal);
+  if (prodModalOverlay) {
+    prodModalOverlay.addEventListener('click', e => {
+      if (e.target === prodModalOverlay) closeProductModal();
+    });
+  }
+
+  // ─── Quote Modal ──────────────────────────────────────────
+  const INQUIRY_TYPES = {
+    quote:    { eyebrow: 'Request a Quote',      title: 'Get Your Custom Quote' },
+    sales:    { eyebrow: 'Contact Sales',        title: 'Speak to Our Sales Team' },
+    drawings: { eyebrow: 'Submit Drawings',      title: 'Send Your Technical Drawings' },
+    consult:  { eyebrow: 'Request Consultation', title: 'Book a Free Consultation' },
+  };
+
+  function openQuoteModal(productName, type = 'quote') {
+    quoteProductName = productName || '';
+    const info = INQUIRY_TYPES[type] || INQUIRY_TYPES.quote;
+
+    if (quoteModalEyebrow) quoteModalEyebrow.textContent = info.eyebrow;
+    if (quoteModalTitle)   quoteModalTitle.textContent   = info.title;
+    if (quoteModalProduct) quoteModalProduct.textContent = `Product: ${productName}`;
+
+    // Highlight the matching type button
+    document.querySelectorAll('.quote-type-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.type === type);
+    });
+
+    quoteModalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeQuoteModal() {
+    quoteModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (quoteModalClose) quoteModalClose.addEventListener('click', closeQuoteModal);
+  if (quoteModalOverlay) {
+    quoteModalOverlay.addEventListener('click', e => {
+      if (e.target === quoteModalOverlay) closeQuoteModal();
+    });
+  }
+
+  // Quote type buttons
+  document.querySelectorAll('.quote-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.quote-type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      const info = INQUIRY_TYPES[btn.dataset.type] || INQUIRY_TYPES.quote;
+      if (quoteModalEyebrow) quoteModalEyebrow.textContent = info.eyebrow;
+      if (quoteModalTitle)   quoteModalTitle.textContent   = info.title;
+    });
+  });
+
+  // Quote form submit
+  if (quoteForm) {
+    quoteForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('qf-submit');
+      if (submitBtn) {
+        submitBtn.textContent = '✓ Inquiry Sent!';
+        submitBtn.style.background = '#059669';
+        submitBtn.disabled = true;
+        setTimeout(() => {
+          closeQuoteModal();
+          submitBtn.textContent = 'Send Inquiry →';
+          submitBtn.style.background = '';
+          submitBtn.disabled = false;
+          quoteForm.reset();
+        }, 2500);
+      }
+    });
+  }
+
+  // ─── Search ───────────────────────────────────────────────
+  let searchDebounce;
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      searchQuery = searchInput.value.trim();
+      searchClear.classList.toggle('visible', searchQuery.length > 0);
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        if (searchQuery) {
+          // In search mode, show overview hidden
+          overviewEl.style.display = 'none';
+          subcatStrip.classList.add('hidden');
+        } else {
+          overviewEl.style.display = '';
+          renderSubcatStrip();
+        }
+        renderGrid();
+        renderCategoryNav();
+      }, 200);
+    });
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      searchQuery = '';
+      searchClear.classList.remove('visible');
+      overviewEl.style.display = '';
+      renderAll();
+    });
+  }
+
+  // ─── Keyboard handling ────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (quoteModalOverlay && quoteModalOverlay.classList.contains('open')) {
+        closeQuoteModal();
+      } else if (prodModalOverlay && prodModalOverlay.classList.contains('open')) {
+        closeProductModal();
+      }
+    }
+  });
+
+  // ─── Render All ───────────────────────────────────────────
+  function renderAll() {
+    renderCategoryNav();
+    renderSubcatStrip();
+    renderCategoryOverview();
+    renderGrid();
+  }
+
+  // ─── Public API ───────────────────────────────────────────
+  window.catalogNav = function(categoryId) {
+    activeCategoryId = categoryId;
+    activeSubcatId   = null;
+    searchQuery      = '';
+    if (searchInput) { searchInput.value = ''; searchClear.classList.remove('visible'); }
+    renderAll();
+  };
+
+  window.openProductDetail = openProductModal;
+  window.openQuote = openQuoteModal;
+
+  // ─── Initialize ───────────────────────────────────────────
+  renderMegaMenu();
+  renderAll();
+
+})();
+

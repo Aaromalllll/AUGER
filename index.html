@@ -159,7 +159,23 @@
     <ul class="nav-links" role="list">
       <li><a href="#hero" class="nav-link">Home</a></li>
       <li><a href="#about" class="nav-link">About</a></li>
-      <li><a href="#products" class="nav-link">Products</a></li>
+      <li class="nav-products-dropdown">
+        <a href="#products" class="nav-link">
+          Products
+          <svg class="nav-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </a>
+        <div class="nav-mega-menu" id="nav-mega-menu" role="region" aria-label="Product categories">
+          <div class="mega-menu-title">Auger Fabrication Product Catalog</div>
+          <div class="mega-menu-grid" id="mega-menu-grid"><!-- populated by JS --></div>
+          <div class="mega-menu-footer">
+            <span class="mega-menu-all-link" id="mega-view-all" tabindex="0">
+              View All Products
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+            <span style="font-size:0.72rem;color:var(--color-gray);">6 Categories · 30+ Products</span>
+          </div>
+        </div>
+      </li>
       <li><a href="#industries" class="nav-link">Industries</a></li>
       <li><a href="#process" class="nav-link">Process</a></li>
       <li><a href="#portfolio" class="nav-link">Projects</a></li>
@@ -180,7 +196,7 @@
   <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
     <a href="#hero">Home</a>
     <a href="#about">About</a>
-    <a href="#products">Products &amp; Solutions</a>
+    <a href="#products">Product Catalog</a>
     <a href="#industries">Industries</a>
     <a href="#process">Our Process</a>
     <a href="#portfolio">Projects</a>
@@ -408,260 +424,140 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════════
-       PRODUCTS & SOLUTIONS
+       PRODUCTS & SOLUTIONS — AUGER FABRICATION CATALOG
   ══════════════════════════════════════════════════════════ -->
   <section id="products" aria-labelledby="products-heading">
     <div class="container">
       <div class="section-header reveal">
-        <div class="section-eyebrow">Products &amp; Solutions</div>
-        <h2 id="products-heading" class="section-title">Engineered for Every <span>Challenge</span></h2>
-        <p class="section-desc">From precision auger systems to complete production line automation, our product range
-          covers every aspect of modern industrial manufacturing.</p>
+        <div class="section-eyebrow">Product Catalog</div>
+        <h2 id="products-heading" class="section-title">Auger Fabrication <span>Product Lineup</span></h2>
+        <p class="section-desc">Precision-engineered vertical augers, horizontal conveyors, custom flighting, and complete auger tooling systems for food, pharmaceutical, chemical, and industrial applications.</p>
       </div>
 
-      <!-- Tabs -->
-      <div class="products-tabs reveal" role="tablist" aria-label="Product categories">
-        <button class="tab-btn active" id="tab-auger" role="tab" aria-selected="true" aria-controls="tab-content-auger"
-          data-tab="auger">Auger Systems</button>
-        <button class="tab-btn" id="tab-packaging" role="tab" aria-selected="false"
-          aria-controls="tab-content-packaging" data-tab="packaging">Packaging</button>
-        <button class="tab-btn" id="tab-handling" role="tab" aria-selected="false" aria-controls="tab-content-handling"
-          data-tab="handling">Material Handling</button>
-        <button class="tab-btn" id="tab-automation" role="tab" aria-selected="false"
-          aria-controls="tab-content-automation" data-tab="automation">Automation</button>
+      <div class="catalog-wrapper reveal">
+
+        <!-- Search Bar -->
+        <div class="catalog-search-bar" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="catalog-search-input" placeholder="Search products, applications, specifications..." aria-label="Search products" autocomplete="off" />
+          <span class="catalog-search-clear" id="catalog-search-clear" role="button" tabindex="0" aria-label="Clear search">✕</span>
+        </div>
+
+        <!-- Category Nav -->
+        <nav class="catalog-category-nav" id="catalog-category-nav" role="tablist" aria-label="Product categories">
+          <!-- populated by JS -->
+        </nav>
+
+        <!-- Subcategory Filter Strip -->
+        <div class="catalog-subcat-strip hidden" id="catalog-subcat-strip" role="group" aria-label="Subcategories">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Results Info -->
+        <p class="catalog-results-info" id="catalog-results-info" aria-live="polite"></p>
+
+        <!-- Category Overview -->
+        <div class="category-overview" id="category-overview">
+          <div class="cat-overview-icon" id="cat-overview-icon"></div>
+          <div class="cat-overview-text">
+            <h3 id="cat-overview-title"></h3>
+            <p id="cat-overview-desc"></p>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="catalog-grid" id="catalog-grid" role="list">
+          <!-- populated by JS -->
+        </div>
+
+      </div><!-- /.catalog-wrapper -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PRODUCT DETAIL MODAL
+  ══════════════════════════════════════════════════════════ -->
+  <div class="product-modal-overlay" id="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="product-modal-title-text">
+    <div class="product-modal" id="product-modal">
+      <div class="product-modal-hero">
+        <img class="product-modal-hero-img" id="product-modal-img" src="" alt="" loading="lazy" />
+        <div class="product-modal-hero-overlay"></div>
+        <div class="product-modal-tag" id="product-modal-tag"></div>
+        <div class="product-modal-hero-content">
+          <div class="product-modal-breadcrumb" id="product-modal-breadcrumb"></div>
+          <h2 class="product-modal-title" id="product-modal-title-text"></h2>
+        </div>
+        <button class="product-modal-close" id="product-modal-close" aria-label="Close product details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="product-modal-body" id="product-modal-body">
+        <!-- content injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       QUOTE REQUEST MODAL
+  ══════════════════════════════════════════════════════════ -->
+  <div class="quote-modal-overlay" id="quote-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quote-modal-title">
+    <div class="quote-modal" id="quote-modal">
+      <button class="quote-modal-close" id="quote-modal-close" aria-label="Close quote form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="quote-modal-eyebrow" id="quote-modal-eyebrow">Request a Quote</div>
+      <h2 class="quote-modal-title" id="quote-modal-title">Get a Quote</h2>
+      <div class="quote-modal-product-name" id="quote-modal-product-name"></div>
+
+      <div class="quote-type-selector" role="group" aria-label="Inquiry type">
+        <button class="quote-type-btn selected" data-type="quote" id="qt-quote">
+          <div class="qt-icon">📋</div>
+          <span class="qt-label">Request Quote</span>
+        </button>
+        <button class="quote-type-btn" data-type="sales" id="qt-sales">
+          <div class="qt-icon">💬</div>
+          <span class="qt-label">Contact Sales</span>
+        </button>
+        <button class="quote-type-btn" data-type="drawings" id="qt-drawings">
+          <div class="qt-icon">📐</div>
+          <span class="qt-label">Submit Drawings</span>
+        </button>
+        <button class="quote-type-btn" data-type="consult" id="qt-consult">
+          <div class="qt-icon">📞</div>
+          <span class="qt-label">Consultation</span>
+        </button>
       </div>
 
-      <!-- Auger Tab -->
-      <div class="tab-content active products-grid" id="tab-content-auger" role="tabpanel" aria-labelledby="tab-auger">
-        <article class="product-card reveal reveal-delay-1">
-          <div class="product-card-img">
-            <img src="assets/product_auger.png" alt="Custom stainless steel auger screw conveyor" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Best Seller</span>
+      <form id="quote-form" novalidate>
+        <div class="quote-form-row">
+          <div class="quote-form-group">
+            <label class="quote-form-label" for="qf-name">Full Name *</label>
+            <input class="quote-form-input" type="text" id="qf-name" name="name" placeholder="John Smith" required />
           </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Custom Auger Systems</h3>
-            <p class="product-card-desc">Precision-engineered auger screws custom designed for your material, flow rate,
-              and space requirements. Available in carbon steel, stainless, and specialty alloys.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">
-                Learn More
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </a>
-              <div class="product-specs">
-                <span class="product-spec">Food Grade</span>
-                <span class="product-spec">Custom</span>
-              </div>
-            </div>
+          <div class="quote-form-group">
+            <label class="quote-form-label" for="qf-company">Company *</label>
+            <input class="quote-form-input" type="text" id="qf-company" name="company" placeholder="Acme Corp" required />
           </div>
-        </article>
-        <article class="product-card reveal reveal-delay-2">
-          <div class="product-card-img">
-            <img src="assets/product_conveyor.png" alt="Industrial screw conveyor system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">High Capacity</span>
+        </div>
+        <div class="quote-form-row">
+          <div class="quote-form-group">
+            <label class="quote-form-label" for="qf-email">Email Address *</label>
+            <input class="quote-form-input" type="email" id="qf-email" name="email" placeholder="john@company.com" required />
           </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Screw Conveyors</h3>
-            <p class="product-card-desc">Heavy-duty screw conveyors for bulk powder, granule, and aggregate transfer.
-              Designed for continuous duty in harsh industrial environments.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">
-                Learn More
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </a>
-              <div class="product-specs">
-                <span class="product-spec">Heavy Duty</span>
-                <span class="product-spec">CEMA</span>
-              </div>
-            </div>
+          <div class="quote-form-group">
+            <label class="quote-form-label" for="qf-phone">Phone</label>
+            <input class="quote-form-input" type="tel" id="qf-phone" name="phone" placeholder="+1 (555) 000-0000" />
           </div>
-        </article>
-        <article class="product-card reveal reveal-delay-3">
-          <div class="product-card-img">
-            <img src="assets/product_auger.png" alt="Auger feed system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Precision</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Auger Feed Systems</h3>
-            <p class="product-card-desc">Volumetric and gravimetric auger dosing systems for precise ingredient feeding
-              and batching in food, pharma, and chemical applications.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">
-                Learn More
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </a>
-              <div class="product-specs">
-                <span class="product-spec">±0.1% Accuracy</span>
-              </div>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <!-- Packaging Tab -->
-      <div class="tab-content products-grid" id="tab-content-packaging" role="tabpanel" aria-labelledby="tab-packaging">
-        <article class="product-card reveal reveal-delay-1">
-          <div class="product-card-img">
-            <img src="assets/product_packaging.png" alt="Vertical form fill seal packaging machine" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">VFFS</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Vertical Form Fill Seal</h3>
-            <p class="product-card-desc">High-speed VFFS machines for pouches, bags, and sachets. Integrated auger
-              dosing for powders, granules, and free-flowing products.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">Up to 120 BPM</span></div>
-            </div>
-          </div>
-        </article>
-        <article class="product-card reveal reveal-delay-2">
-          <div class="product-card-img">
-            <img src="assets/portfolio_packaging.png" alt="Horizontal packaging system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">HFFS</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Horizontal Packaging Systems</h3>
-            <p class="product-card-desc">Flow-wrap and horizontal form fill seal machines for solid products, bars,
-              trays, and irregularly shaped items.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">Servo Driven</span></div>
-            </div>
-          </div>
-        </article>
-        <article class="product-card reveal reveal-delay-3">
-          <div class="product-card-img">
-            <img src="assets/product_automation.png" alt="Automated wrapping solution" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Automated</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Automated Wrapping Solutions</h3>
-            <p class="product-card-desc">Stretch wrapping, shrink tunnel, and robotic palletizing systems for
-              end-of-line automation in high-volume operations.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">Fully Robotic</span></div>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <!-- Material Handling Tab -->
-      <div class="tab-content products-grid" id="tab-content-handling" role="tabpanel" aria-labelledby="tab-handling">
-        <article class="product-card reveal reveal-delay-1">
-          <div class="product-card-img">
-            <img src="assets/product_conveyor.png" alt="Industrial bulk conveyor system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Heavy Duty</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Belt & Bucket Conveyors</h3>
-            <p class="product-card-desc">Engineered conveyor systems for bulk material transport. Designed for dusty,
-              corrosive, and high-temperature environments.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">High Temp</span></div>
-            </div>
-          </div>
-        </article>
-        <article class="product-card reveal reveal-delay-2">
-          <div class="product-card-img">
-            <img src="assets/industry_agriculture.png" alt="Industrial hopper and bulk feeding system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Custom</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Hoppers &amp; Bulk Feeders</h3>
-            <p class="product-card-desc">Mass flow and funnel flow hopper systems with integrated level detection,
-              vibration, and live-bottom dischargers.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">Mass Flow</span></div>
-            </div>
-          </div>
-        </article>
-        <article class="product-card reveal reveal-delay-3">
-          <div class="product-card-img">
-            <img src="assets/portfolio_conveyor.png" alt="Pneumatic conveying system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Pneumatic</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Pneumatic Conveying</h3>
-            <p class="product-card-desc">Dilute and dense phase pneumatic conveying systems for transferring dry bulk
-              powders and granules over long distances.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">Dense Phase</span></div>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <!-- Automation Tab -->
-      <div class="tab-content products-grid" id="tab-content-automation" role="tabpanel"
-        aria-labelledby="tab-automation">
-        <article class="product-card reveal reveal-delay-1">
-          <div class="product-card-img">
-            <img src="assets/product_automation.png" alt="PLC industrial automation system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Industry 4.0</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">PLC Integration</h3>
-            <p class="product-card-desc">Complete PLC control panel design, programming, and integration for Siemens,
-              Allen-Bradley, and Mitsubishi platforms.</p>
-            <div class="product-card-footer">
-              <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg></a>
-              <div class="product-specs"><span class="product-spec">SCADA</span><span class="product-spec">HMI</span>
-              </div>
-            </div>
-          </div>
-        </article>
-        <article class="product-card reveal reveal-delay-2">
-          <div class="product-card-img">
-            <img src="assets/product_automation.png" alt="Industrial robotics system" loading="lazy" />
-            <div class="product-card-img-overlay"></div>
-            <span class="product-tag">Robotics</span>
-          </div>
-          <div class="product-card-body">
-            <h3 class="product-card-title">Robotics &amp; Vision Systems</h3>
-            <p class="product-card-desc">Collaborative and industrial robot integration for pick-and-place, palletizing,
-              welding, and quality inspection with machine vision.</p>
-            <div class="product-card-footer">
+        </div>
+        <div class="quote-form-group">
+          <label class="quote-form-label" for="qf-message">Project Details / Message</label>
+          <textarea class="quote-form-textarea" id="qf-message" name="message" placeholder="Describe your application, material, required output, timeline..."></textarea>
+        </div>
+        <button type="submit" class="quote-form-submit" id="qf-submit">Send Inquiry →</button>
+        <p class="quote-form-note">We respond within 1 business day. Your information is kept strictly confidential.</p>
+      </form>
+    </div>
+  </div>            <div class="product-card-footer">
               <a href="#cta" class="product-card-link">Learn More <svg viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1477,13 +1373,13 @@
           <div>
             <h3 class="footer-col-title">Products</h3>
             <ul class="footer-links" role="list">
-              <li><a href="#products">Custom Auger Systems</a></li>
-              <li><a href="#products">Screw Conveyors</a></li>
-              <li><a href="#products">VFFS Packaging</a></li>
-              <li><a href="#products">Horizontal Packaging</a></li>
-              <li><a href="#products">Material Handling</a></li>
-              <li><a href="#products">PLC Automation</a></li>
-              <li><a href="#products">Robotics Systems</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('vertical-augers')">Vertical Augers</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('horizontal-augers')">Horizontal Augers</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('flighting')">Flighting</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('replacement-augers')">Replacement Augers</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('custom-augers')">Custom Augers</a></li>
+              <li><a href="#products" onclick="window.catalogNav&&window.catalogNav('maintenance-repairs')">Maintenance &amp; Repairs</a></li>
+              <li><a href="#products">VFFS Tooling</a></li>
             </ul>
           </div>
 
@@ -1583,6 +1479,7 @@
     }
   </style>
 
+  <script src="products-data.js"></script>
   <script src="main.js"></script>
 </body>
 
