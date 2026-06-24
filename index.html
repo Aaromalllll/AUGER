@@ -443,36 +443,45 @@
           <span class="catalog-search-clear" id="catalog-search-clear" role="button" tabindex="0" aria-label="Clear search">✕</span>
         </div>
 
-        <!-- Category Nav -->
+        <!-- Category Nav (Now contains premium cards) -->
         <nav class="catalog-category-nav" id="catalog-category-nav" role="tablist" aria-label="Product categories">
           <!-- populated by JS -->
         </nav>
 
+      </div><!-- /.catalog-wrapper -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CATEGORY BROWSING MODAL
+  ══════════════════════════════════════════════════════════ -->
+  <div class="category-modal-overlay" id="category-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="category-modal-title-text">
+    <div class="category-modal" id="category-modal">
+      <div class="category-modal-header">
+        <img class="category-modal-img" id="category-modal-img" src="" alt="" loading="lazy" />
+        <div class="category-modal-overlay-gradient"></div>
+        <button class="category-modal-close" id="category-modal-close" aria-label="Close category details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="category-modal-header-content">
+          <h2 class="category-modal-title" id="category-modal-title-text"></h2>
+          <div class="category-modal-count" id="category-modal-count"></div>
+        </div>
+      </div>
+      
+      <div class="category-modal-body">
         <!-- Subcategory Filter Strip -->
         <div class="catalog-subcat-strip hidden" id="catalog-subcat-strip" role="group" aria-label="Subcategories">
           <!-- populated by JS -->
-        </div>
-
-        <!-- Results Info -->
-        <p class="catalog-results-info" id="catalog-results-info" aria-live="polite"></p>
-
-        <!-- Category Overview -->
-        <div class="category-overview" id="category-overview">
-          <div class="cat-overview-icon" id="cat-overview-icon"></div>
-          <div class="cat-overview-text">
-            <h3 id="cat-overview-title"></h3>
-            <p id="cat-overview-desc"></p>
-          </div>
         </div>
 
         <!-- Product Grid -->
         <div class="catalog-grid" id="catalog-grid" role="list">
           <!-- populated by JS -->
         </div>
-
-      </div><!-- /.catalog-wrapper -->
+      </div>
     </div>
-  </section>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════
        PRODUCT DETAIL MODAL

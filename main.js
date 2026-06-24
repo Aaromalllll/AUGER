@@ -827,7 +827,7 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
   if (typeof AUGER_CATALOG === 'undefined') return;
 
   // ─── State ──────────────────────────────────────────────
-  let activeCategoryId = 'vertical-augers';
+  let activeCategoryId = null;
   let activeSubcatId   = null;
   let searchQuery      = '';
   let currentProductId = null;
@@ -837,15 +837,18 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
   const catNav       = document.getElementById('catalog-category-nav');
   const subcatStrip  = document.getElementById('catalog-subcat-strip');
   const grid         = document.getElementById('catalog-grid');
-  const resultsInfo  = document.getElementById('catalog-results-info');
-  const overviewEl   = document.getElementById('category-overview');
-  const ovIcon       = document.getElementById('cat-overview-icon');
-  const ovTitle      = document.getElementById('cat-overview-title');
-  const ovDesc       = document.getElementById('cat-overview-desc');
   const searchInput  = document.getElementById('catalog-search-input');
   const searchClear  = document.getElementById('catalog-search-clear');
   const megaGrid     = document.getElementById('mega-menu-grid');
   const megaViewAll  = document.getElementById('mega-view-all');
+  
+  // New Category Modal DOM refs
+  const catModalOverlay = document.getElementById('category-modal-overlay');
+  const catModalClose   = document.getElementById('category-modal-close');
+  const catModalImg     = document.getElementById('category-modal-img');
+  const catModalTitle   = document.getElementById('category-modal-title-text');
+  const catModalCount   = document.getElementById('category-modal-count');
+
   const prodModalOverlay = document.getElementById('product-modal-overlay');
   const prodModalClose   = document.getElementById('product-modal-close');
   const prodModalImg     = document.getElementById('product-modal-img');
@@ -870,31 +873,37 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
   // ─── Render category navigation ──────────────────────────
   function renderCategoryNav() {
     catNav.innerHTML = AUGER_CATALOG.categories.map(cat => `
-      <button class="cat-nav-btn${cat.id === activeCategoryId ? ' active' : ''}"
-              data-cat-id="${cat.id}"
-              role="tab"
-              aria-selected="${cat.id === activeCategoryId}"
-              aria-label="${cat.name}">
-        ${cat.icon}
-        ${cat.name}
-      </button>
+      <article class="cat-nav-card" data-cat-id="${cat.id}" role="button" tabindex="0" aria-label="${cat.name}">
+        <div class="cat-nav-card-img-wrap">
+          <img class="cat-nav-card-img" src="${cat.image}" alt="${cat.name}" loading="lazy" />
+        </div>
+        <div class="cat-nav-card-content">
+          <h3 class="cat-nav-card-title">${cat.name}</h3>
+          <p class="cat-nav-card-desc">${cat.description}</p>
+        </div>
+      </article>
     `).join('');
 
-    catNav.querySelectorAll('.cat-nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeCategoryId = btn.dataset.catId;
+    catNav.querySelectorAll('.cat-nav-card').forEach(card => {
+      card.addEventListener('click', () => {
+        activeCategoryId = card.dataset.catId;
         activeSubcatId   = null;
         searchQuery      = '';
         if (searchInput) { searchInput.value = ''; searchClear.classList.remove('visible'); }
-        renderAll();
-        // Scroll into view if needed
-        document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        openCategoryModal();
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
       });
     });
   }
 
   // ─── Render subcategory strip ─────────────────────────────
   function renderSubcatStrip() {
+    if (!subcatStrip) return;
     const cat = getCat(activeCategoryId);
     if (!cat || !cat.subcategories || cat.subcategories.length === 0) {
       subcatStrip.classList.add('hidden');
@@ -902,9 +911,9 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
     }
     subcatStrip.classList.remove('hidden');
     subcatStrip.innerHTML = `
-      <button class="subcat-btn${!activeSubcatId ? ' active' : ''}" data-subcat-id="">All</button>
+      <button class="subcat-btn${!activeSubcatId ? ' active' : ''}" data-subcat-id="">[ All ]</button>
       ${cat.subcategories.map(sub => `
-        <button class="subcat-btn${activeSubcatId === sub.id ? ' active' : ''}" data-subcat-id="${sub.id}">${sub.name}</button>
+        <button class="subcat-btn${activeSubcatId === sub.id ? ' active' : ''}" data-subcat-id="${sub.id}">[ ${sub.name} ]</button>
       `).join('')}
     `;
     subcatStrip.querySelectorAll('.subcat-btn').forEach(btn => {
@@ -912,18 +921,42 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
         activeSubcatId = btn.dataset.subcatId || null;
         renderGrid();
         renderSubcatStrip();
-        renderCategoryOverview();
       });
     });
   }
 
-  // ─── Render category overview banner ─────────────────────
-  function renderCategoryOverview() {
+  // ─── Category Modal Handlers ───────────────────────────────
+  function openCategoryModal() {
+    if (!catModalOverlay) return;
     const cat = getCat(activeCategoryId);
     if (!cat) return;
-    ovIcon.innerHTML  = cat.icon;
-    ovTitle.textContent = cat.name;
-    ovDesc.textContent  = cat.description;
+    
+    // Populate modal header
+    catModalImg.src = cat.image;
+    catModalTitle.textContent = cat.name;
+    
+    // Render content
+    renderSubcatStrip();
+    renderGrid();
+    
+    // Show modal
+    document.body.style.overflow = 'hidden'; // prevent bg scroll
+    catModalOverlay.classList.add('open');
+  }
+
+  function closeCategoryModal() {
+    if (!catModalOverlay) return;
+    document.body.style.overflow = '';
+    catModalOverlay.classList.remove('open');
+  }
+
+  if (catModalClose) {
+    catModalClose.addEventListener('click', closeCategoryModal);
+  }
+  if (catModalOverlay) {
+    catModalOverlay.addEventListener('click', (e) => {
+      if (e.target === catModalOverlay) closeCategoryModal();
+    });
   }
 
   // ─── Get filtered products ────────────────────────────────
@@ -933,6 +966,8 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
     if (searchQuery) {
       return searchProducts(searchQuery);
     }
+
+    if (!activeCategoryId) return [];
 
     products = products.filter(p => p.category === activeCategoryId);
 
@@ -951,26 +986,32 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
     setTimeout(() => {
       grid.classList.remove('loading');
 
-      if (!resultsInfo) return;
-
-      if (searchQuery) {
-        resultsInfo.innerHTML = products.length > 0
-          ? `<strong>${products.length}</strong> result${products.length !== 1 ? 's' : ''} for "<strong>${searchQuery}</strong>"`
-          : '';
-      } else {
-        resultsInfo.innerHTML = `Showing <strong>${products.length}</strong> product${products.length !== 1 ? 's' : ''}`;
+      if (catModalCount) {
+        catModalCount.textContent = `${products.length} Products Available`;
       }
 
       if (products.length === 0) {
-        grid.innerHTML = `
-          <div class="catalog-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <p>No products found</p>
-            <span>Try adjusting your search or selecting a different category.</span>
-          </div>
-        `;
+        if (!activeCategoryId && !searchQuery) {
+          grid.innerHTML = `
+            <div class="catalog-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+              </svg>
+              <p>Please select a category above</p>
+              <span>Choose a category to view our product catalog.</span>
+            </div>
+          `;
+        } else {
+          grid.innerHTML = `
+            <div class="catalog-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <p>No products found</p>
+              <span>Try adjusting your search or selecting a different category.</span>
+            </div>
+          `;
+        }
         return;
       }
 
@@ -1036,7 +1077,7 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
         setTimeout(() => el.classList.add('revealed'), i * 50);
       });
 
-    }, 80);
+    }, 300);
   }
 
   // ─── Render mega-menu ─────────────────────────────────────
@@ -1265,16 +1306,21 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
       clearTimeout(searchDebounce);
       searchDebounce = setTimeout(() => {
         if (searchQuery) {
-          // In search mode, show overview hidden
-          overviewEl.style.display = 'none';
-          subcatStrip.classList.add('hidden');
+          activeCategoryId = null; // search overrides category
+          activeSubcatId = null;
+          
+          if (catModalOverlay && !catModalOverlay.classList.contains('open')) {
+            catModalImg.src = 'assets/product_replacement_auger.png'; // generic
+            document.body.style.overflow = 'hidden';
+            catModalOverlay.classList.add('open');
+          }
+          catModalTitle.textContent = `Search: "${searchQuery}"`;
+          if (subcatStrip) subcatStrip.classList.add('hidden');
+          renderGrid();
         } else {
-          overviewEl.style.display = '';
-          renderSubcatStrip();
+          closeCategoryModal();
         }
-        renderGrid();
-        renderCategoryNav();
-      }, 200);
+      }, 300);
     });
   }
 
@@ -1283,19 +1329,16 @@ console.log('%cAuger Fabrication Product Catalog — Loaded', 'color:#6b7280;fon
       if (searchInput) searchInput.value = '';
       searchQuery = '';
       searchClear.classList.remove('visible');
-      overviewEl.style.display = '';
-      renderAll();
+      closeCategoryModal();
     });
   }
 
   // ─── Keyboard handling ────────────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      if (quoteModalOverlay && quoteModalOverlay.classList.contains('open')) {
-        closeQuoteModal();
-      } else if (prodModalOverlay && prodModalOverlay.classList.contains('open')) {
-        closeProductModal();
-      }
+      if (prodModalOverlay && prodModalOverlay.classList.contains('open')) closeProductModal();
+      else if (quoteModalOverlay && quoteModalOverlay.classList.contains('open')) closeQuoteModal();
+      else if (catModalOverlay && catModalOverlay.classList.contains('open')) closeCategoryModal();
     }
   });
 
