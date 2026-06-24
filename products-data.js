@@ -12,7 +12,7 @@ const AUGER_CATALOG = {
       slug: 'vertical-augers',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 6c3-1 7-1 10 0"/><path d="M5 10c3-1 7-1 10 0"/><path d="M5 14c3-1 7-1 10 0"/><path d="M5 18c3-1 7-1 10 0"/></svg>`,
       description: 'Precision vertical auger systems for powder and granule filling in food, pharmaceutical, and chemical applications. Our vertical augers deliver consistent volumetric dosing with tight tolerances.',
-      image: 'file:///C:/Users/hp/.gemini/antigravity-ide/brain/94d6ff98-bc1f-4d14-b739-ac0ca130445b/media__1781890951165.png',
+      image: 'assets/vertical-augers.png',
       subcategories: [
         { id: 'free-flow', name: 'Free-Flow Augers' },
         { id: 'non-free-flow', name: 'Non-Free-Flow Augers' },
@@ -54,7 +54,7 @@ const AUGER_CATALOG = {
       slug: 'replacement-augers',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>`,
       description: 'Drop-in replacement augers and tooling for all major filling machine brands. We reverse-engineer and manufacture OEM-quality replacements at competitive lead times.',
-      image: 'file:///C:/Users/hp/.gemini/antigravity-ide/brain/94d6ff98-bc1f-4d14-b739-ac0ca130445b/media__1781888861289.jpg',
+      image: 'assets/replacement-augers.png',
       subcategories: []
     },
     {
@@ -72,7 +72,7 @@ const AUGER_CATALOG = {
       slug: 'maintenance-repairs',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
       description: 'Expert auger refurbishment, reconditioning, and emergency repair services. We restore worn and damaged auger systems to original performance specifications, minimizing your downtime.',
-      image: 'file:///C:/Users/hp/.gemini/antigravity-ide/brain/94d6ff98-bc1f-4d14-b739-ac0ca130445b/media__1781888861270.jpg',
+      image: 'assets/auger-maintanance-and-repairs.png',
       subcategories: []
     }
   ],
